@@ -57,4 +57,49 @@ The dataset contains BRSR and sustainability-related reports from:
 - ACC
 
 The dataset covers approximately **3 years of reporting data**, with **18 reports and 5,000+ pages** used for extraction and validation.
+## 10 real questions
+
+See [docs/QUESTIONS.md](docs/QUESTIONS.md).
+
+## Run it
+
+bash
+python -m venv .venv
+
+
+Windows:
+powershell
+.venv\Scripts\activate
+
+
+Install dependencies:
+bash
+pip install -r requirements-dev.txt
+
+
+Create your environment file:
+
+Windows:
+powershell
+copy .env.example .env
+
+
+macOS/Linux:
+bash
+cp .env.example .env
+
+
+Start the application:
+bash
+uvicorn app.main:app --reload
+
+
+Check the health endpoint:
+bash
+curl localhost:8000/health
+
+
+## Live link
+
+\<Added in Week 2>
 
