@@ -60,46 +60,14 @@ The dataset covers approximately **3 years of reporting data**, with **18 report
 ## 10 real questions
 
 See [docs/QUESTIONS.md](docs/QUESTIONS.md).
-
 ## Run it
-
-bash
-python -m venv .venv
-
-
-Windows:
-powershell
-.venv\Scripts\activate
-
-
-Install dependencies:
-bash
+```bash
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
-
-
-Create your environment file:
-
-Windows:
-powershell
-copy .env.example .env
-
-
-macOS/Linux:
-bash
-cp .env.example .env
-
-
-Start the application:
-bash
+cp .env.example .env                                 # Windows: copy .env.example .env
 uvicorn app.main:app --reload
-
-
-Check the health endpoint:
-bash
 curl localhost:8000/health
-
+```
 
 ## Live link
-
-\<Added in Week 2>
-
+<Added in Week 2>
