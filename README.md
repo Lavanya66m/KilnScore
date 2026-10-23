@@ -57,9 +57,7 @@ The system also performs unit normalization and validation checks. For example, 
 | acc_ar_2022_23.pdf | https://www.acclimited.com/ | 294 | Public corporate disclosure / Investor relations | 2026-10-23 |
 | acc_ar_2021_22.pdf | https://www.acclimited.com/ | 286 | Public corporate disclosure / Investor relations | 2026-10-23 |
 
-Full data lives in `data/raw/` (not committed). A 2–3 file sample is in `data/sample/`.
 
-The dataset covers approximately **3 years of reporting data**, with **18 reports and 5,000+ pages** used for extraction and validation.
 ## 10 real questions
 
 See [docs/QUESTIONS.md](docs/QUESTIONS.md).
