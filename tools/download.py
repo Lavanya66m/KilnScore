@@ -1,6 +1,7 @@
 import csv
 import hashlib
-from logging import root
+
+# from logging import root
 import os
 import sys
 import time
@@ -12,7 +13,7 @@ import requests
 
 RAW = "data/raw"
 MANIFEST = "data/manifest.csv"
-HEADERS = {"User-Agent": "ExamateStudentProject/1.0 (learning project; contact: your-email@example.com)"}
+HEADERS = {"User-Agent": "ExamateStudentProject/1.0 (learning project; contact: lavanyarajkumar66@gmail.com)"}
 DELAY = 2 # seconds between requests: be polite to government servers
 robots = {}
 
@@ -20,12 +21,12 @@ def allowed(url):
     root = "{0.scheme}://{0.netloc}".format(urlparse(url))
     if root not in robots:
         rp = RobotFileParser(root + "/robots.txt")
-    try:
-        rp.read()
-    except Exception:
-        rp = None # robots.txt unreachable: proceed carefully
-        robots[root] = rp
-        rp = robots[root]
+        try:
+            rp.read()
+        except Exception:
+            rp = None # robots.txt unreachable: proceed carefully
+            robots[root] = rp
+            rp = robots[root]
         return rp is None or rp.can_fetch(HEADERS["User-Agent"], url)
     
 def name_for(url):
