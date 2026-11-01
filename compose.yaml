@@ -1,0 +1,35 @@
+
+services:
+  api:
+    build: .
+    container_name: kilnscore-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: docker
+      DATABASE_URL: postgresql+psycopg://kilnuser:kilnpassword@db:5432/kilnscore
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: kilnscore-db
+    environment:
+      POSTGRES_DB: kilnscore
+      POSTGRES_USER: kilnuser
+      POSTGRES_PASSWORD: kilnpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kilnuser -d kilnscore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

@@ -5,13 +5,16 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI
 from fastapi.responses import StreamingResponse
+from sqlalchemy import func
 
 from app.config import Settings, get_settings
+from app.database import SessionLocal
 from app.llm.errors import LLMConfigurationError, LLMUnavailable
 from app.llm.factory import create_provider
 from app.llm.reliable import AsyncReliableLLM
 from app.llm.types import LLMRequest, Message
-from app.schemas import ChatRequest, ChatResponse, UsageResponse
+from app.models import UsageRecord
+from app.schemas import ChatRequest, ChatResponse, UsageResponse, UsageSummary
 
 app = FastAPI(title="Examate RAG starter", version="0.1.0")
 
@@ -43,6 +46,28 @@ def health(settings: SettingsDep) -> dict:
         "app": settings.app_name,
         "environment": settings.environment,
     }
+
+
+@app.get("/usage", response_model=UsageSummary)
+def get_usage():
+    with SessionLocal() as db:
+        total_requests = db.query(func.count(UsageRecord.id)).scalar() or 0
+        total_input_tokens = (
+            db.query(func.coalesce(func.sum(UsageRecord.input_tokens), 0)).scalar()
+        )
+        total_output_tokens = (
+            db.query(func.coalesce(func.sum(UsageRecord.output_tokens), 0)).scalar()
+        )
+        estimated_cost = (
+            db.query(func.coalesce(func.sum(UsageRecord.cost_usd), 0.0)).scalar()
+        )
+
+    return UsageSummary(
+        total_requests=total_requests,
+        total_input_tokens=total_input_tokens,
+        total_output_tokens=total_output_tokens,
+        estimated_cost_usd=float(estimated_cost),
+    )
 
 
 def sse(data: dict, event: str | None = None) -> str:
@@ -83,6 +108,17 @@ async def chat(request: ChatRequest, provider: LLMDep) -> StreamingResponse:
             output_tokens=usage.output_tokens if usage else 0,
             estimated=usage.estimated if usage else True,
         )
+
+        # Save successful request usage in PostgreSQL.
+        with SessionLocal() as db:
+            record = UsageRecord(
+                input_tokens=usage_response.input_tokens,
+                output_tokens=usage_response.output_tokens,
+                estimated=usage_response.estimated,
+                cost_usd=0.0,
+            )
+            db.add(record)
+            db.commit()
 
         yield sse(
             {
