@@ -1,13 +1,54 @@
+
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: kilnscore
+          POSTGRES_USER: kilnuser
+          POSTGRES_PASSWORD: kilnpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kilnuser -d kilnscore"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ENVIRONMENT: ci
+      DATABASE_URL: postgresql+psycopg://kilnuser:kilnpassword@localhost:5432/kilnscore
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements-dev.txt
-      - run: ruff check .
-      - run: pytest -q
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Check code quality
+        run: ruff check .
+
+      - name: Create database tables
+        run: python create_tables.py
+
+      - name: Run tests
+        run: pytest -q
