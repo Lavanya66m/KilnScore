@@ -9,3 +9,5 @@ data/raw/
 *.sqlite
 .DS_Store
 venv
+.neon
+node_modules/
