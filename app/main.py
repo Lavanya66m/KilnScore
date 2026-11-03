@@ -14,7 +14,16 @@ from app.llm.factory import create_provider
 from app.llm.reliable import AsyncReliableLLM
 from app.llm.types import LLMRequest, Message
 from app.models import UsageRecord
-from app.schemas import ChatRequest, ChatResponse, UsageResponse, UsageSummary
+from app.retrieval import retrieve_chunks
+from app.schemas import (
+    AskRequest,
+    AskResponse,
+    ChatRequest,
+    ChatResponse,
+    Citation,
+    UsageResponse,
+    UsageSummary,
+)
 
 app = FastAPI(title="Examate RAG starter", version="0.1.0")
 
@@ -131,4 +140,76 @@ async def chat(request: ChatRequest, provider: LLMDep) -> StreamingResponse:
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
+    )
+
+
+@app.post("/ask", response_model=AskResponse)
+async def ask(request: AskRequest, provider: LLMDep):
+    # Step 1: Retrieve relevant chunks from PostgreSQL.
+    chunks = retrieve_chunks(request.question, limit=5)
+
+    if not chunks:
+        return AskResponse(
+            question=request.question,
+            answer="I could not find relevant information in the documents.",
+            citations=[],
+        )
+
+    # Step 2: Build context with document and page details.
+    context = "\n\n".join(
+        (
+            f"Document: {chunk['document']}\n"
+            f"Page: {chunk['page']}\n"
+            f"Content: {chunk['content']}"
+        )
+        for chunk in chunks
+    )
+
+    # Step 3: Prepare the LLM request.
+    llm_request = LLMRequest(
+        messages=(
+            Message(
+                role="system",
+                content=(
+                    "You are a document-based assistant. "
+                    "Answer using only the supplied context. "
+                    "If the answer is not present, say so. "
+                    "Do not invent facts or citations. "
+                    "Mention the document page when relevant."
+                ),
+            ),
+            Message(
+                role="user",
+                content=(
+                    f"Context:\n{context}\n\n"
+                    f"Question: {request.question}"
+                ),
+            ),
+        ),
+        model=get_settings().llm_model,
+    )
+
+    # Step 4: Collect the streamed LLM response.
+    answer_parts = []
+
+    async for chunk in provider.stream(llm_request):
+        if chunk.text:
+            answer_parts.append(chunk.text)
+
+    answer = "".join(answer_parts)
+
+    # Step 5: Prepare citations.
+    citations = [
+        Citation(
+            document=chunk["document"],
+            page=chunk["page"],
+        )
+        for chunk in chunks
+    ]
+
+    # Step 6: Return the final response.
+    return AskResponse(
+        question=request.question,
+        answer=answer,
+        citations=citations,
     )

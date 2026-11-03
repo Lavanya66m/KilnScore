@@ -1,3 +1,4 @@
+
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -28,3 +29,18 @@ class UsageSummary(BaseModel):
     total_input_tokens: int
     total_output_tokens: int
     estimated_cost_usd: float
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3)
+
+
+class Citation(BaseModel):
+    document: str
+    page: int
+
+
+class AskResponse(BaseModel):
+    question: str
+    answer: str
+    citations: list[Citation]

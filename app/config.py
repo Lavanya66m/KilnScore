@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     llm_fallback_model: str = ""
     llm_fallback_base_url: str = ""
     llm_fallback_api_key: str = ""
-    llm_timeout_seconds: float = 30.0
+    llm_timeout_seconds: float = 90
     llm_max_retries: int = 3
 
 
